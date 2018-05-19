@@ -14,21 +14,9 @@ type Bridge struct {
 }
 
 func MakeBridge() *Bridge {
-	b := &Bridge{
+	return &Bridge{
 		started: false,
 	}
-
-	onInterrupt(func() {
-		if b.WI != nil {
-			b.WI.Shutdown(b.ctx)
-		}
-
-		if b.cancel != nil {
-			b.cancel()
-		}
-	})
-
-	return b
 }
 
 func (b *Bridge) Start() (bool, error) {
@@ -38,7 +26,7 @@ func (b *Bridge) Start() (bool, error) {
 
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 
-	wi, err := whapp.MakeInstance(b.ctx, chromePath, true)
+	wi, err := whapp.MakeInstanceWithPool(b.ctx, pool, chromePath, true)
 	if err != nil {
 		return false, err
 	}
@@ -54,6 +42,7 @@ func (b *Bridge) Stop() bool {
 		return false
 	}
 
+	b.WI.Shutdown(b.ctx)
 	b.cancel()
 
 	b.started = false

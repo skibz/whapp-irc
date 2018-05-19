@@ -30,11 +30,9 @@ type Instance struct {
 	injected bool
 }
 
-// MakeInstance makes a new Instance.
-func MakeInstance(ctx context.Context, chromePath string, headless bool) (*Instance, error) {
-	options := chromedp.WithRunnerOptions(
+func getOptions(chromePath string, headless bool) []runner.CommandLineOption {
+	return []runner.CommandLineOption{
 		runner.Path(chromePath),
-		runner.Port(9222),
 
 		runner.KillProcessGroup,
 		runner.ForceKill,
@@ -47,9 +45,15 @@ func MakeInstance(ctx context.Context, chromePath string, headless bool) (*Insta
 		runner.NoDefaultBrowserCheck,
 
 		runner.UserAgent(userAgent),
-	)
+	}
+}
 
-	cdp, err := chromedp.New(ctx, options)
+// MakeInstance makes a new Instance.
+func MakeInstance(ctx context.Context, chromePath string, headless bool) (*Instance, error) {
+	options := getOptions(chromePath, headless)
+	options = append(options, runner.Port(9222))
+
+	cdp, err := chromedp.New(ctx, chromedp.WithRunnerOptions(options...))
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +62,22 @@ func MakeInstance(ctx context.Context, chromePath string, headless bool) (*Insta
 		LoginState: Loggedout,
 
 		cdp:      cdp,
+		injected: false,
+	}, nil
+}
+
+func MakeInstanceWithPool(ctx context.Context, pool *chromedp.Pool, chromePath string, headless bool) (*Instance, error) {
+	options := getOptions(chromePath, headless)
+
+	res, err := pool.Allocate(ctx, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Instance{
+		LoginState: Loggedout,
+
+		cdp:      res.CDP(),
 		injected: false,
 	}, nil
 }
