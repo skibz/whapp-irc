@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/base64"
+	"fmt"
 	"log"
 	"mime"
 	"os"
@@ -11,6 +13,12 @@ import (
 
 	"github.com/h2non/filetype"
 	"github.com/mozillazg/go-unidecode"
+	"github.com/wangii/emoji"
+)
+
+var (
+	identifiers = make(map[string]int)
+	unsafeRegex = regexp.MustCompile(`(?i)[^a-z\d+]`)
 )
 
 func strTimestamp() string {
@@ -51,11 +59,32 @@ func getExtensionByMimeOrBytes(mime string, bytes []byte) string {
 	return getExtension(bytes)
 }
 
-var unsafeRegex = regexp.MustCompile(`(?i)[^a-z\d+]`)
+// IrcSafeString converts any emoji unicode characters into emojitag, then converts any non-ascii characters into their ascii equivalents, then strips characters that don't satisfy unsafeRegex, and finally disambiguates the identifier if required
+func IrcSafeString(str string) string {
+	emojiTagged := emoji.UnicodeToEmojiTag(str)
+	decoded := unidecode.Unidecode(emojiTagged)
+	ircSafe := unsafeRegex.ReplaceAllLiteralString(decoded, "")
+	distinct := ensureIdentifierIsDistinct(ircSafe)
+	return distinct
+}
 
-func ircSafeString(str string) string {
-	str = unidecode.Unidecode(str)
-	return unsafeRegex.ReplaceAllLiteralString(str, "")
+func ensureIdentifierIsDistinct(ident string) string {
+	bin := base64.StdEncoding.EncodeToString([]byte(ident))
+	_, exists := identifiers[bin]
+
+	// we've encountered this identifier before so
+	// increment the counter and append the new count
+	// to the identifier we return
+	if exists {
+		identifiers[bin]++
+		counter := identifiers[bin]
+		return fmt.Sprintf("%s%d", ident, counter)
+	}
+
+	// it's the first time we're encountering this identifier
+	// so we initialise the counter
+	identifiers[bin] = 1
+	return ident
 }
 
 func onInterrupt(fn func()) {
