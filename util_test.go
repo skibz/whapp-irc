@@ -6,16 +6,11 @@ import (
 	"testing"
 )
 
-func TestIrcSafeString(t *testing.T) {
+const unsafeCharacters = "$$$$&&&"
 
-	// so we can assert that unsafe chars get stripped
-	unsafeCharacters := "$$$$&&&"
-
+func TestIrcSafeStringSimple(t *testing.T) {
 	// a basic emoji string
 	simpleEmojiStr := emoji.EmojiTagToUnicode(":ok_hand:" + unsafeCharacters)
-
-	// a much longer one
-	complexEmojiStr := emoji.EmojiTagToUnicode(":ok_hand::ok_hand::ok_hand::ok_hand::ok_hand::ok_hand::ok_hand:" + unsafeCharacters)
 
 	// we invoke the test subject a few times in a
 	// row to test the map[string]int side effects
@@ -44,6 +39,12 @@ func TestIrcSafeString(t *testing.T) {
 	}
 
 	t.Logf("simple emoji strings are unique after invoking IrcSafeString: %s %s %s", simpleSafeStr1, simpleSafeStr2, simpleSafeStr3)
+}
+
+func TestIrcSafeStringComplex(t *testing.T) {
+
+	// a much longer one
+	complexEmojiStr := emoji.EmojiTagToUnicode(":ok_hand::ok_hand::ok_hand::ok_hand::ok_hand::ok_hand::ok_hand:" + unsafeCharacters)
 
 	// we invoke the test subject a few times in a
 	// row to test the map[string]int side effects
