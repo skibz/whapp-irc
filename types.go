@@ -21,11 +21,11 @@ func (p *Participant) FullName() string {
 // SafeName returns the irc-safe name for the current Participant.
 func (p *Participant) SafeName() string {
 	str := p.FullName()
-	if numberRegex.MatchString(str) && ircSafeString(p.Contact.PushName) != "" {
+	if numberRegex.MatchString(str) && IrcSafeString(p.Contact.PushName) != "" {
 		str = p.Contact.PushName
 	}
 
-	return ircSafeString(str)
+	return IrcSafeString(str)
 }
 
 // Chat represents a chat on the bridge.
@@ -45,7 +45,7 @@ type Chat struct {
 
 // SafeName returns the IRC-safe name for the current chat.
 func (c *Chat) SafeName() string {
-	return ircSafeString(c.Name)
+	return IrcSafeString(c.Name)
 }
 
 // Identifier returns the safe IRC identifier for the current chat.
