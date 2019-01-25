@@ -59,7 +59,7 @@ func getExtensionByMimeOrBytes(mime string, bytes []byte) string {
 	return getExtension(bytes)
 }
 
-// IrcSafeString converts any emoji unicode characters into emojitag, then converts any non-ascii characters into their ascii equivalents, then strips characters that don't satisfy unsafeRegex, and finally disambiguates the identifier if required
+// IrcSafeString converts any emoji unicode characters into emojitag, then converts any non-ascii characters into their ascii equivalents, then strips characters that satisfy unsafeRegex, and finally disambiguates the identifier if required
 func IrcSafeString(str string) string {
 	emojiTagged := emoji.UnicodeToEmojiTag(str)
 	decoded := unidecode.Unidecode(emojiTagged)
