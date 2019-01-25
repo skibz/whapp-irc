@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"log"
 	"mime"
@@ -68,23 +67,22 @@ func IrcSafeString(str string) string {
 	return distinct
 }
 
-func ensureIdentifierIsDistinct(ident string) string {
-	bin := base64.StdEncoding.EncodeToString([]byte(ident))
-	_, exists := identifiers[bin]
+func ensureIdentifierIsDistinct(identity string) string {
+	_, exists := identifiers[identity]
 
 	// we've encountered this identifier before so
 	// increment the counter and append the new count
 	// to the identifier we return
 	if exists {
-		identifiers[bin]++
-		counter := identifiers[bin]
-		return fmt.Sprintf("%s%d", ident, counter)
+		identifiers[identity]++
+		counter := identifiers[identity]
+		return fmt.Sprintf("%s%d", identity, counter)
 	}
 
 	// it's the first time we're encountering this identifier
 	// so we initialise the counter
-	identifiers[bin] = 1
-	return ident
+	identifiers[identity] = 1
+	return identity
 }
 
 func onInterrupt(fn func()) {
