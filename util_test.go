@@ -18,15 +18,23 @@ func TestIrcSafeStringSimple(t *testing.T) {
 	simpleSafeStr2 := IrcSafeString(simpleEmojiStr)
 	simpleSafeStr3 := IrcSafeString(simpleEmojiStr)
 
+	if simpleSafeStr1 == "" ||
+		simpleSafeStr2 == "" ||
+		simpleSafeStr3 == "" {
+		t.Fatalf("expected simple emoji strings to not be empty strings after invoking IrcSafeString but found empty strings: %s %s %s", simpleSafeStr1, simpleSafeStr2, simpleSafeStr3)
+	}
+
 	// ensure none of the strings match
 	if simpleSafeStr1 == simpleSafeStr2 ||
-	simpleSafeStr1 == simpleSafeStr3 ||
-	simpleSafeStr2 == simpleSafeStr3 {
+		simpleSafeStr1 == simpleSafeStr3 ||
+		simpleSafeStr2 == simpleSafeStr3 {
 		t.Fatalf("expected simple emoji strings to NOT match after invoking IrcSafeString but found matching strings: %s %s %s", simpleSafeStr1, simpleSafeStr2, simpleSafeStr3)
 	}
 
 	// ensure none of them contain the characters we expected to not exist
-	if strings.Contains(simpleSafeStr1, unsafeCharacters) || strings.Contains(simpleSafeStr2, unsafeCharacters) || strings.Contains(simpleSafeStr3, unsafeCharacters) {
+	if strings.Contains(simpleSafeStr1, unsafeCharacters) ||
+		strings.Contains(simpleSafeStr2, unsafeCharacters) ||
+		strings.Contains(simpleSafeStr3, unsafeCharacters) {
 		t.Fatalf("expected simple emoji strings to NOT contain unsafeCharacters substring after invoking IrcSafeString but found substring match: %s %s %s", simpleSafeStr1, simpleSafeStr2, simpleSafeStr3)
 	}
 
@@ -53,13 +61,23 @@ func TestIrcSafeStringComplex(t *testing.T) {
 	complexSafeStr2 := IrcSafeString(complexEmojiStr)
 	complexSafeStr3 := IrcSafeString(complexEmojiStr)
 
+	if complexSafeStr1 == "" ||
+		complexSafeStr2 == "" ||
+		complexSafeStr3 == "" {
+		t.Fatalf("expected complex emoji strings to not be empty strings after invoking IrcSafeString but found empty strings: %s %s %s", complexSafeStr1, complexSafeStr2, complexSafeStr3)
+	}
+
 	// ensure none of the strings match
-	if complexSafeStr1 == complexSafeStr2 || complexSafeStr1 == complexSafeStr3 || complexSafeStr2 == complexSafeStr3 {
+	if complexSafeStr1 == complexSafeStr2 ||
+		complexSafeStr1 == complexSafeStr3 ||
+		complexSafeStr2 == complexSafeStr3 {
 		t.Fatalf("expected complex emoji strings to NOT match after invoking IrcSafeString but found matching strings: %s %s %s", complexSafeStr1, complexSafeStr2, complexSafeStr3)
 	}
 
 	// ensure none of them contain the characters we expected to not exist
-	if strings.Contains(complexSafeStr1, unsafeCharacters) || strings.Contains(complexSafeStr2, unsafeCharacters) || strings.Contains(complexSafeStr3, unsafeCharacters) {
+	if strings.Contains(complexSafeStr1, unsafeCharacters) ||
+		strings.Contains(complexSafeStr2, unsafeCharacters) ||
+		strings.Contains(complexSafeStr3, unsafeCharacters) {
 		t.Fatalf("expected complex emoji strings to NOT contain unsafeCharacters substring after invoking IrcSafeString but found substring match: %s %s %s", complexSafeStr1, complexSafeStr2, complexSafeStr3)
 	}
 

@@ -70,8 +70,6 @@ func IrcSafeString(str string) string {
 }
 
 func ensureIdentifierIsDistinct(identity string) string {
-	_, exists := identifiers[identity]
-
 	// we've encountered this identifier before so
 	// increment the counter and append the new count
 	// to the identifier we return
