@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/hex"
-	"fmt"
 	"github.com/wangii/emoji"
 	"strings"
 	"testing"
