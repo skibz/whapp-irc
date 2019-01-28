@@ -1,12 +1,39 @@
 package main
 
 import (
+	"encoding/hex"
+	"fmt"
 	"github.com/wangii/emoji"
 	"strings"
 	"testing"
 )
 
-const unsafeCharacters = "$$$$&&&"
+const unsafeCharacters = "$&!:;/?^%#*~`"
+
+func TestIrcSafeStringSimpleNoEmoji(t *testing.T) {
+	simpleNoEmojiStr := IrcSafeString(unsafeCharacters)
+	if simpleNoEmojiStr == "" {
+		t.Fatalf("expected simple no emoji string to not be empty string after invoking IrcSafeString but found empty string: %s", simpleNoEmojiStr)
+	}
+	t.Logf("simple no emoji string is unique after invoking IrcSafeString: %s", simpleNoEmojiStr)
+}
+
+func TestIrcSafeStringSimpleNoEmojiDecode(t *testing.T) {
+	simpleNoEmojiStr := IrcSafeString(unsafeCharacters)
+	if simpleNoEmojiStr == "" {
+		t.Fatalf("expected simple no emoji string to not be empty string after invoking IrcSafeString but found empty string: %s", simpleNoEmojiStr)
+	}
+	parts := strings.Split(simpleNoEmojiStr, "_")
+	stripped := parts[0][1:]
+	original, err := hex.DecodeString(stripped)
+	if err != nil {
+		t.Fatalf("error decoding hex string: %e %s %s", err, stripped, original)
+	}
+	if string(original) != unsafeCharacters {
+		t.Fatalf("expected strings to match but found no match: %s %s", stripped, original)
+	}
+	t.Logf("strings match after decoding back to original string value: %s %s", original, unsafeCharacters)
+}
 
 func TestIrcSafeStringSimple(t *testing.T) {
 	// a basic emoji string
