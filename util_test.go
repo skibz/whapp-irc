@@ -19,7 +19,9 @@ func TestIrcSafeStringSimple(t *testing.T) {
 	simpleSafeStr3 := IrcSafeString(simpleEmojiStr)
 
 	// ensure none of the strings match
-	if simpleSafeStr1 == simpleSafeStr2 || simpleSafeStr1 == simpleSafeStr3 || simpleSafeStr2 == simpleSafeStr3 {
+	if simpleSafeStr1 == simpleSafeStr2 ||
+	simpleSafeStr1 == simpleSafeStr3 ||
+	simpleSafeStr2 == simpleSafeStr3 {
 		t.Fatalf("expected simple emoji strings to NOT match after invoking IrcSafeString but found matching strings: %s %s %s", simpleSafeStr1, simpleSafeStr2, simpleSafeStr3)
 	}
 

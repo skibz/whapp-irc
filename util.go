@@ -75,7 +75,7 @@ func ensureIdentifierIsDistinct(identity string) string {
 	// we've encountered this identifier before so
 	// increment the counter and append the new count
 	// to the identifier we return
-	if exists {
+	if _, exists := identifiers[identity]; exists {
 		identifiers[identity]++
 		counter := identifiers[identity]
 		return fmt.Sprintf("%s%d", identity, counter)
