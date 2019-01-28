@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"mime"
@@ -66,6 +67,11 @@ func IrcSafeString(str string) string {
 	emojiTagged := emoji.UnicodeToEmojiTag(str)
 	decoded := unidecode.Unidecode(emojiTagged)
 	ircSafe := unsafeRegex.ReplaceAllLiteralString(decoded, "")
+
+	if ircSafe == "" {
+		return ensureIdentifierIsDistinct("x" + hex.EncodeToString([]byte(str)))
+	}
+
 	return ensureIdentifierIsDistinct(ircSafe)
 }
 
@@ -76,7 +82,7 @@ func ensureIdentifierIsDistinct(identity string) string {
 	if _, exists := identifiers[identity]; exists {
 		identifiers[identity]++
 		counter := identifiers[identity]
-		return fmt.Sprintf("%s%d", identity, counter)
+		return fmt.Sprintf("%s_%d", identity, counter)
 	}
 
 	// it's the first time we're encountering this identifier
