@@ -42,7 +42,6 @@ func TestIrcSafeStringSimple(t *testing.T) {
 }
 
 func TestIrcSafeStringComplex(t *testing.T) {
-
 	// a much longer one
 	complexEmojiStr := emoji.EmojiTagToUnicode(":ok_hand::ok_hand::ok_hand::ok_hand::ok_hand::ok_hand::ok_hand:" + unsafeCharacters)
 
@@ -73,5 +72,4 @@ func TestIrcSafeStringComplex(t *testing.T) {
 	}
 
 	t.Logf("complex emoji strings are unique after invoking IrcSafeString: %s %s %s", complexSafeStr1, complexSafeStr2, complexSafeStr3)
-
 }
