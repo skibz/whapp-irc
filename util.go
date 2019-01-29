@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"fmt"
 	"log"
 	"mime"
 	"regexp"
@@ -11,6 +12,11 @@ import (
 	"github.com/h2non/filetype"
 	"github.com/mozillazg/go-unidecode"
 	"github.com/wangii/emoji"
+)
+
+var (
+	unsafeRegex = regexp.MustCompile(`(?i)[^a-z\d+]`)
+	identifiers = make(map[string]int)
 )
 
 func strTimestamp() string {
@@ -51,20 +57,25 @@ func getExtensionByMimeOrBytes(mime string, bytes []byte) string {
 	return getExtension(bytes)
 }
 
-var unsafeRegex = regexp.MustCompile(`(?i)[^a-z\d+:]`)
-
-// ircSafeString converts emojis into their corresponding tag, converts Unicode
-// into their matching ASCII representation and removes and left non safe
-// characters in the given str.
-func ircSafeString(str string) string {
+func IrcSafeString(str string) string {
 	emojiTagged := emoji.UnicodeToEmojiTag(str)
 	decoded := unidecode.Unidecode(emojiTagged)
 	ircSafe := unsafeRegex.ReplaceAllLiteralString(decoded, "")
 
 	if ircSafe == "" {
-		return "x" + hex.EncodeToString([]byte(str))
+		return ensureIdentifierIsDistinct("x" + hex.EncodeToString([]byte(str)))
 	}
-	return ircSafe
+	return ensureIdentifierIsDistinct(ircSafe)
+}
+
+func ensureIdentifierIsDistinct(identity string) string {
+	if _, exists := identifiers[identity]; exists {
+		identifiers[identity]++
+		counter := identifiers[identity]
+		return fmt.Sprintf("%s_%d", identity, counter)
+	}
+	identifiers[identity] = 1
+	return identity
 }
 
 func plural(count int, singular, plural string) string {
