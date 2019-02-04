@@ -34,49 +34,60 @@ var (
 )
 
 func triggerUpstreamIrcConnect() {
-	errfmt := "upstream irc server connect error: %e"
-	uri, err := url.ParseRequestURI(cfg.UpstreamIRCBaseURI)
-	if err != nil {
+	errfmt := "upstream irc server connect error: %s"
+	for {
+		err := func() error {
+
+			uri, err := url.ParseRequestURI(cfg.UpstreamIRCBaseURI)
+			if err != nil {
+				return err
+			}
+
+			uri.Path = cfg.UpstreamIRCPath
+			body := url.Values{}
+
+			for _, channel := range cfg.IRCChannels {
+				body.Add("chan", channel)
+			}
+
+			body.Add("host", cfg.Hostname)
+			body.Add("nick", cfg.IRCNickname)
+			body.Add("id", cfg.IRCIdentityID)
+			body.Add("hash", cfg.IRCIdentityHash)
+
+			reader := strings.NewReader(body.Encode())
+			req, err := http.NewRequest(cfg.UpstreamIRCMethod, uri.String(), reader)
+			if err != nil {
+				return err
+			}
+
+			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+			c := &http.Client{}
+			res, err := c.Do(req)
+			if err != nil {
+				return err
+			}
+
+			defer res.Body.Close()
+
+			if res.StatusCode >= 400 {
+				return errors.New("upstream sent " + res.Status)
+			}
+
+			return nil
+		}()
+
+		// exit the loop if no error
+		if err == nil {
+			break
+		}
+
+		// otherwise log the error and keep iterating
 		log.Printf(errfmt, err)
-		return
+
+		time.Sleep(2 * time.Second)
 	}
-
-	uri.Path = cfg.UpstreamIRCPath
-	body := url.Values{}
-
-	for _, channel := range cfg.IRCChannels {
-		body.Add("chan", channel)
-	}
-
-	body.Add("host", cfg.Hostname)
-	body.Add("nick", cfg.IRCNickname)
-	body.Add("id", cfg.IRCIdentityID)
-	body.Add("hash", cfg.IRCIdentityHash)
-
-	reader := strings.NewReader(body.Encode())
-	req, err := http.NewRequest(cfg.UpstreamIRCMethod, uri.String(), reader)
-	if err != nil {
-		log.Printf(errfmt, err)
-		return
-	}
-
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	c := &http.Client{}
-	res, err := c.Do(req)
-	if err != nil {
-		log.Printf(errfmt, err)
-		return
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode >= 400 {
-		log.Printf(errfmt, errors.New("upstream sent "+res.Status))
-		return
-	}
-
-	return
 }
 
 func init() {
