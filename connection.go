@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	qrcode "github.com/skip2/go-qrcode"
 	"io"
 	"log"
 	"math"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"whapp-irc/config"
 	"whapp-irc/ircConnection"
 	"whapp-irc/whapp"
 )
@@ -41,12 +43,12 @@ type Connection struct {
 }
 
 // BindSocket binds the given TCP connection.
-func BindSocket(socket *net.TCPConn) error {
+func BindSocket(socket *net.TCPConn, cfg *config.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	conn := &Connection{
-		bridge: MakeBridge(),
+		bridge: MakeBridge(cfg),
 
 		irc: ircConnection.HandleConnection(ctx, socket),
 
@@ -154,7 +156,9 @@ func BindSocket(socket *net.TCPConn) error {
 			conn.timestampMap.Set(c.ID.String(), c.rawChat.Timestamp)
 			go conn.saveDatabaseEntry()
 			continue
-		} else if c.rawChat.Timestamp <= prevTimestamp {
+		}
+
+		if c.rawChat.Timestamp <= prevTimestamp {
 			continue
 		}
 
@@ -447,4 +451,70 @@ func (conn *Connection) saveDatabaseEntry() error {
 		log.Printf("error while updating user entry: %s\n", err)
 	}
 	return err
+}
+
+func (conn *Connection) getQrCodesUntilLoggedIn(ctx context.Context) error {
+
+	defer func() {
+		log.Println("LEAVE getQrCodesUntilLoggedIn")
+	}()
+
+	cfg := conn.bridge.cfg
+
+	var previousQR string
+
+	// NOTE
+	// it reeeeally sucks that we're using an EAGER
+	// strategy for detecting the qr code and it's numerous
+	// subtle behaviours
+	for {
+
+		loggedIn, err := conn.bridge.WI.GetLoggedIn(ctx)
+		if err != nil {
+			return err
+		}
+
+		if loggedIn {
+			log.Println("client is now logged in, about to enumerate conversations")
+			return nil
+		}
+
+		code, err := conn.bridge.WI.GetLoginCode(ctx)
+		if err == whapp.ErrLoggedIn {
+			log.Println("client is now logged in, about to enumerate conversations")
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		// avoid broadcasting and generating qr code values
+		// that have not changed since the last loop iteration
+		if previousQR == code {
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		log.Println("detected new qr code")
+
+		// otherwise, save it for the next comparison
+		previousQR = code
+
+		bytes, err := qrcode.Encode(code, qrcode.High, 512)
+		if err != nil {
+			return err
+		}
+
+		// the old qr codes no longer work once a new code has been
+		// generated, so we don't need to uniquely name the files.
+		_, err = fs.AddBlob("qr", "png", bytes)
+		if err != nil {
+			return err
+		}
+
+		qrCodeURI := fmt.Sprintf("Scan this QR code: %s/qr", cfg.FileServerBaseURI)
+
+		if err := conn.irc.Status(qrCodeURI); err != nil {
+			return err
+		}
+	}
 }
