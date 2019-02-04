@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sort"
 	"strconv"
 	"time"
@@ -12,6 +11,8 @@ import (
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/client"
 	"github.com/chromedp/chromedp/runner"
+
+	"whapp-irc/config"
 )
 
 // TODO: wrap unknown chromedp errors in an error type.
@@ -40,6 +41,7 @@ func (u *poolUnit) Shutdown(ctx context.Context, opts ...client.Option) error {
 type Instance struct {
 	LoginState LoginState
 
+	cfg      *config.Config
 	unit     internalUnit
 	cdp      *chromedp.CDP
 	injected bool
@@ -65,17 +67,12 @@ func getOptions(headless bool) []runner.CommandLineOption {
 func MakeInstance(
 	ctx context.Context,
 	headless bool,
-	loggingLevel LoggingLevel,
+	cfg *config.Config,
 ) (*Instance, error) {
 	options := chromedp.WithRunnerOptions(getOptions(headless)...)
 
 	cdp, err := func() (*chromedp.CDP, error) {
-		switch loggingLevel {
-		case LogLevelVerbose:
-			return chromedp.New(ctx, options, chromedp.WithLog(log.Printf))
-		default:
-			return chromedp.New(ctx, options)
-		}
+		return chromedp.New(ctx, options)
 	}()
 	if err != nil {
 		return nil, err
@@ -84,6 +81,7 @@ func MakeInstance(
 	return &Instance{
 		LoginState: Loggedout,
 
+		cfg:      cfg,
 		unit:     cdp,
 		cdp:      cdp,
 		injected: false,
@@ -95,7 +93,7 @@ func MakeInstanceWithPool(
 	ctx context.Context,
 	pool *chromedp.Pool,
 	headless bool,
-	loggingLevel LoggingLevel,
+	cfg *config.Config,
 ) (*Instance, error) {
 	options := getOptions(headless)
 
@@ -107,6 +105,7 @@ func MakeInstanceWithPool(
 	return &Instance{
 		LoginState: Loggedout,
 
+		cfg:      cfg,
 		unit:     &poolUnit{res},
 		cdp:      res.CDP(),
 		injected: false,
@@ -234,7 +233,7 @@ func (wi *Instance) GetMe(ctx context.Context) (Me, error) {
 	return res, nil
 }
 
-func (wi *Instance) getLoggedIn(ctx context.Context) (bool, error) {
+func (wi *Instance) GetLoggedIn(ctx context.Context) (bool, error) {
 	var res bool
 
 	if err := wi.inject(ctx); err != nil {
@@ -266,7 +265,7 @@ func (wi *Instance) ListenLoggedIn(ctx context.Context, interval time.Duration) 
 				return
 
 			case <-time.After(interval):
-				res, err := wi.getLoggedIn(ctx)
+				res, err := wi.GetLoggedIn(ctx)
 				if err != nil {
 					errCh <- err
 					return
