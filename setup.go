@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
 	"whapp-irc/whapp"
-
-	qrcode "github.com/skip2/go-qrcode"
 )
 
 // TODO: check if already set-up
@@ -29,7 +28,9 @@ func (conn *Connection) setup(cancel context.CancelFunc) error {
 	found, err := userDb.GetItem(conn.irc.Nick(), &user)
 	if err != nil {
 		return err
-	} else if found {
+	}
+
+	if found {
 		conn.timestampMap.Swap(user.LastReceivedReceipts)
 		conn.chats = user.Chats
 
@@ -54,34 +55,43 @@ func (conn *Connection) setup(cancel context.CancelFunc) error {
 
 	// if we aren't logged in yet we have to get the QR code and stuff
 	if state == whapp.Loggedout {
-		code, err := conn.bridge.WI.GetLoginCode(conn.bridge.ctx)
-		if err != nil {
-			return fmt.Errorf("Error while retrieving login code: %s", err.Error())
-		}
+		for {
+			err := func() error {
+				qrcodeScanned := make(chan bool)
+				go func() {
+					defer close(qrcodeScanned)
 
-		bytes, err := qrcode.Encode(code, qrcode.High, 512)
-		if err != nil {
-			return err
-		}
+					log.Println("before getQrCodesUntilLoggedIn()")
+					err := conn.getQrCodesUntilLoggedIn(conn.bridge.ctx)
+					if err != nil {
+						log.Println("error from getQrCodesUntilLoggedIn()", err.Error())
+						qrcodeScanned <- false
+						return
+					}
+					qrcodeScanned <- true
+				}()
 
-		qrFile, err := fs.AddBlob("qr-"+strTimestamp(), "png", bytes)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if err = fs.RemoveFile(qrFile); err != nil {
-				log.Printf("error while removing QR code: %s\n", err.Error())
+				log.Println("before block for getQrCodesUntilLoggedIn()")
+				scan := <-qrcodeScanned
+
+				if scan {
+					// we're logged in, break out
+					return nil
+				}
+
+				return errors.New("exited qr code wait loop with error")
+			}()
+
+			// if no error was received
+			// it means we're logged in
+			// so exit the loop
+			if err == nil {
+				break
 			}
-		}()
 
-		if err := conn.irc.Status("Scan this QR code: " + qrFile.URL); err != nil {
-			return err
+			// otherwise, keep waiting...
 		}
-	}
 
-	// waiting for login
-	if err := conn.bridge.WI.WaitLogin(conn.bridge.ctx); err != nil {
-		return err
 	}
 	conn.irc.Status("logged in")
 
