@@ -89,6 +89,10 @@ func (conn *Connection) setup(cancel context.CancelFunc) error {
 				break
 			}
 
+			// TODO
+			// maybe the errors we receive here are unrecoverable?
+			// perhaps we ought to just crash?
+
 			// otherwise, keep waiting...
 		}
 
