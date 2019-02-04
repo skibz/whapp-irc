@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"time"
+	"whapp-irc/config"
 	"whapp-irc/whapp"
 )
 
@@ -12,15 +13,17 @@ import (
 type Bridge struct {
 	WI *whapp.Instance
 
+	cfg     *config.Config
 	started bool
 	ctx     context.Context
 	cancel  context.CancelFunc
 }
 
 // MakeBridge makes and returns a new Bridge instance.
-func MakeBridge() *Bridge {
+func MakeBridge(cfg *config.Config) *Bridge {
 	return &Bridge{
 		started: false,
+		cfg:     cfg,
 	}
 }
 
@@ -32,7 +35,7 @@ func (b *Bridge) Start() (started bool, err error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	wi, err := whapp.MakeInstanceWithPool(ctx, pool, true, loggingLevel)
+	wi, err := whapp.MakeInstanceWithPool(ctx, pool, true, b.cfg)
 	if err != nil {
 		cancel()
 		return false, err
@@ -61,6 +64,7 @@ func (b *Bridge) Stop() (stopped bool) {
 	b.cancel()
 	cancel()
 
+	b.cfg = nil
 	b.started = false
 	b.WI = nil
 	b.ctx = nil
