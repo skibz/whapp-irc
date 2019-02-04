@@ -139,7 +139,11 @@ func ReadEnvVars() (Config, error) {
 		return Config{}, err
 	}
 
+	var uiUseHttps string
 	uiHttps, err := strconv.ParseBool(upstreamIrcHttps)
+	if uiHttps {
+		uiUseHttps = "s"
+	}
 
 	// FIXME
 	// crash parent process on error
@@ -148,7 +152,7 @@ func ReadEnvVars() (Config, error) {
 		return Config{}, err
 	}
 
-	upstreamIrcBaseUri := fmt.Sprintf("http%s://%s:%s", uiHttps, upstreamIrcHost, upstreamIrcPort)
+	upstreamIrcBaseUri := fmt.Sprintf("http%s://%s:%s", uiUseHttps, upstreamIrcHost, upstreamIrcPort)
 
 	channels := getEnvDefault("UPSTREAM_IRC_IDENTITY_CHANNELS", "")
 	nickname := getEnvDefault("UPSTREAM_IRC_IDENTITY_NICKNAME", "")
