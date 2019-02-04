@@ -189,10 +189,12 @@ func main() {
 	}
 
 	if cfg.UpstreamIRC {
+		log.Println("about to close tcp server")
 		// stop accepting new connections
 		// now that upstream has connected
 		listener.Close()
 
+		log.Println("about to block until panic on main thread")
 		for {
 			// and wait until something crashes
 		}
